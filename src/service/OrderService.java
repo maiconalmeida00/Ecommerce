@@ -11,7 +11,9 @@ import repository.ProductRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 public class OrderService {
 
@@ -35,6 +37,8 @@ public class OrderService {
             total = calcularTotal(order);
             order.setTotalAmount(total);
         }
+
+        order.setActive(true);
 
         Order salvo = orderRepo.save(order);
 
@@ -105,10 +109,10 @@ public class OrderService {
     }
 
     public void deletar(Long id) {
-        List<OrderItem> itens = orderItemRepo.findByOrder(id);
-        orderItemRepo.deleteByOrder(id);
-
-        orderRepo.deleteById(id);
+        Order order = buscarPorId(id);
+        order.setActive(false);
+        order.setStatus("CANCELADO");
+        orderRepo.save(order);
     }
 
     private void validar(Order order) {
@@ -120,6 +124,27 @@ public class OrderService {
         }
         if (order.getStatus() == null || order.getStatus().isBlank()) {
             throw new BusinessException("Status do pedido é obrigatório");
+        }
+        order.setStatus(order.getStatus().trim().toUpperCase());
+        if (!order.getStatus().matches("PENDENTE|PAGO|ENVIADO|ENTREGUE|CANCELADO")) {
+            throw new BusinessException("Status inválido. Use: PENDENTE, PAGO, ENVIADO, ENTREGUE ou CANCELADO");
+        }
+
+        Set<Long> produtos = new HashSet<>();
+        for (OrderItem item : order.getItems()) {
+            if (item == null || item.getProduct() == null || item.getProduct().getId() == null) {
+                throw new BusinessException("Cada item do pedido deve possuir um produto válido");
+            }
+            if (item.getQuantity() <= 0) {
+                throw new BusinessException("A quantidade de cada item deve ser maior que zero");
+            }
+            if (item.getPriceAtPurchase() == null
+                    || item.getPriceAtPurchase().compareTo(BigDecimal.ZERO) < 0) {
+                throw new BusinessException("O preço do item não pode ser nulo ou negativo");
+            }
+            if (!produtos.add(item.getProduct().getId())) {
+                throw new BusinessException("O mesmo produto não pode ser repetido no pedido");
+            }
         }
     }
 

@@ -13,8 +13,11 @@ public class Product {
     private String size;
     private String color;
     private String gender;
+    private boolean active;
 
-    public Product() {}
+    public Product() {
+        this.active = true;
+    }
 
     public Product(Long id, Category category, String name,
                    String description, BigDecimal price, int stock,
@@ -28,6 +31,7 @@ public class Product {
         this.size = size;
         this.color = color;
         this.gender = gender;
+        this.active = true;
     }
 
     public Long getId() {
@@ -102,18 +106,31 @@ public class Product {
         this.gender = gender;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     @Override
     public String toString() {
+        Long categoryId = category != null ? category.getId() : null;
+        String categoryName = category != null ? category.getName() : null;
+
         return "Product{" +
-                "id=" + id +
-                ", category=" + category +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", price=" + price +
-                ", stock=" + stock +
-                ", size='" + size + '\'' +
-                ", color='" + color + '\'' +
-                ", gender='" + gender + '\'' +
-                '}';
+            "id=" + id +
+            ", categoriaId=" + categoryId +
+            ", categoriaNome='" + categoryName + '\'' +
+            ", nome='" + name + '\'' +
+            ", descricao='" + description + '\'' +
+            ", preco=" + price +
+            ", estoque=" + stock +
+            ", tamanho='" + size + '\'' +
+            ", cor='" + color + '\'' +
+            ", genero='" + gender + '\'' +
+                ", ativo=" + active +
+            '}';
     }
 }

@@ -8,76 +8,60 @@ public class Customer {
     private String passwordHash;
     private String cpf;
     private String phone;
+    private boolean active;
 
     public Customer() {
+        this.active = true; 
     }
 
-    public Customer(Long id, String name, String email, String passwordHash, String cpf, String phone) {
+    public Customer(Long id, String name, String email,
+                    String passwordHash, String cpf, String phone) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.passwordHash = passwordHash;
         this.cpf = cpf;
         this.phone = phone;
+        this.active = true;
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public void setId(Long id) { this.id = id; }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public void setName(String name) { this.name = name; }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getEmail() { return email; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public void setEmail(String email) { this.email = email; }
 
-    public String getPasswordHash() {
-        return passwordHash;
-    }
+    public String getPasswordHash() { return passwordHash; }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
-    public String getCpf() {
-        return cpf;
-    }
+    public String getCpf() { return cpf; }
 
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
-    }
+    public void setCpf(String cpf) { this.cpf = cpf; }
 
-    public String getPhone() {
-        return phone;
-    }
+    public String getPhone() { return phone; }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public boolean isActive() { return active; }
+
+    public void setActive(boolean active) { this.active = active; }
 
     @Override
     public String toString() {
         return "Customer{" +
                 "id=" + id +
-                ", name='" + name + '\'' +
+                ", nome='" + name + '\'' +
                 ", email='" + email + '\'' +
-                ", passwordHash='" + passwordHash + '\'' +
                 ", cpf='" + cpf + '\'' +
-                ", phone='" + phone + '\'' +
+                ", telefone='" + phone + '\'' +
+                ", ativo=" + active +
                 '}';
     }
 }

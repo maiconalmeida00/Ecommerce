@@ -1,5 +1,6 @@
 package controller;
 
+import exception.BusinessException;
 import model.Category;
 import model.Product;
 import service.CategoryService;
@@ -26,27 +27,50 @@ public class ProductController {
     public void menu() {
         int opcao;
         do {
-            System.out.println("\n=== Menu Produto ===");
-            System.out.println("1 - Listar produtos");
-            System.out.println("2 - Listar produtos acima de um preço");
-            System.out.println("3 - Criar produto");
-            System.out.println("4 - Atualizar produto");
-            System.out.println("5 - Deletar produto");
-            System.out.println("0 - Voltar");
-            System.out.print("Escolha uma opção: ");
+            exibirMenuProdutosECategorias();
 
             opcao = lerInt();
 
-            switch (opcao) {
-                case 1 -> listarProdutos();
-                case 2 -> listarProdutosAcimaDe();
-                case 3 -> criarProduto();
-                case 4 -> atualizarProduto();
-                case 5 -> deletarProduto();
-                case 0 -> System.out.println("Voltando ao menu principal...");
-                default -> System.out.println("Opção inválida!");
+            try {
+                switch (opcao) {
+                    case 1 -> listarProdutos();
+                    case 2 -> listarProdutosAcimaDe();
+                    case 3 -> criarProduto();
+                    case 4 -> atualizarProduto();
+                    case 5 -> deletarProduto();
+                    case 6 -> criarCategoria();
+                    case 7 -> atualizarCategoria();
+                    case 8 -> deletarCategoria();
+                    case 9 -> listarCategorias();
+                    case 0 -> System.out.println("Voltando ao menu principal...");
+                    default -> System.out.println("Opção inválida!");
+                }
+            } catch (BusinessException e) {
+                System.out.println("Erro: " + e.getMessage());
             }
         } while (opcao != 0);
+    }
+
+    private void exibirMenuProdutosECategorias() {
+        System.out.println("\n========================================");
+        System.out.println("        MENU PRODUTOS E CATEGORIAS      ");
+        System.out.println("========================================");
+        System.out.println(" Produtos:");
+        System.out.println("  1) Listar produtos");
+        System.out.println("  2) Listar produtos acima de um preço");
+        System.out.println("  3) Criar produto");
+        System.out.println("  4) Atualizar produto");
+        System.out.println("  5) Deletar produto");
+        System.out.println("----------------------------------------");
+        System.out.println(" Categorias:");
+        System.out.println("  6) Criar categoria");
+        System.out.println("  7) Atualizar categoria");
+        System.out.println("  8) Deletar categoria");
+        System.out.println("  9) Listar categorias");
+        System.out.println("----------------------------------------");
+        System.out.println("  0) Voltar");
+        System.out.println("----------------------------------------");
+        System.out.print("Digite a opção: ");
     }
 
     private void listarProdutos() {
@@ -71,11 +95,9 @@ public class ProductController {
 
     private void criarProduto() {
         System.out.println("\n=== Criar Produto ===");
-        System.out.print("Nome: ");
-        String nome = scanner.nextLine();
+        String nome = lerTextoObrigatorio("Nome: ");
 
-        System.out.print("Descrição: ");
-        String descricao = scanner.nextLine();
+        String descricao = lerTextoObrigatorio("Descrição: ");
 
         System.out.print("Preço: ");
         BigDecimal preco = lerBigDecimal();
@@ -83,14 +105,11 @@ public class ProductController {
         System.out.print("Estoque: ");
         int estoque = lerInt();
 
-        System.out.print("Tamanho (P, M, G, etc.): ");
-        String tamanho = scanner.nextLine();
+        String tamanho = lerTextoObrigatorio("Tamanho (P, M, G, etc.): ");
 
-        System.out.print("Cor: ");
-        String cor = scanner.nextLine();
+        String cor = lerTextoObrigatorio("Cor: ");
 
-        System.out.print("Gênero (M/F/U): ");
-        String genero = scanner.nextLine();
+        String genero = lerTextoObrigatorio("Gênero (M/F/U): ");
 
         System.out.print("ID da categoria: ");
         Long categoriaId = lerLong();
@@ -128,12 +147,12 @@ public class ProductController {
         if (!descricao.isBlank()) existente.setDescription(descricao);
 
         System.out.print("Novo preço (ENTER para manter): ");
-        String precoStr = scanner.nextLine();
-        if (!precoStr.isBlank()) existente.setPrice(new BigDecimal(precoStr));
+        BigDecimal novoPreco = lerBigDecimalOpcional();
+        if (novoPreco != null) existente.setPrice(novoPreco);
 
         System.out.print("Novo estoque (ENTER para manter): ");
-        String estoqueStr = scanner.nextLine();
-        if (!estoqueStr.isBlank()) existente.setStock(Integer.parseInt(estoqueStr));
+        Integer novoEstoque = lerIntOpcional();
+        if (novoEstoque != null) existente.setStock(novoEstoque);
 
         System.out.print("Novo tamanho (ENTER para manter): ");
         String tamanho = scanner.nextLine();
@@ -148,9 +167,8 @@ public class ProductController {
         if (!genero.isBlank()) existente.setGender(genero);
 
         System.out.print("Nova categoria ID (ENTER para manter): ");
-        String categoriaStr = scanner.nextLine();
-        if (!categoriaStr.isBlank()) {
-            Long novaCategoriaId = Long.parseLong(categoriaStr);
+        Long novaCategoriaId = lerLongOpcional();
+        if (novaCategoriaId != null) {
             Category categoria = categoryService.buscarPorId(novaCategoriaId);
             existente.setCategory(categoria);
         }
@@ -168,19 +186,161 @@ public class ProductController {
         System.out.println("Produto deletado com sucesso.");
     }
 
+    private void criarCategoria() {
+        System.out.println("\n=== Criar Categoria ===");
+        String nome = lerTextoObrigatorio("Nome da categoria: ");
+
+        System.out.print("Descrição da categoria (opcional): ");
+        String descricao = scanner.nextLine();
+
+        Category categoria = new Category();
+        categoria.setName(nome);
+        categoria.setDescription(descricao == null || descricao.isBlank() ? null : descricao.trim());
+
+        Category salva = categoryService.criar(categoria);
+        System.out.println("Categoria criada: " + salva);
+    }
+
+    private void atualizarCategoria() {
+        System.out.println("\n=== Atualizar Categoria ===");
+        System.out.print("ID da categoria: ");
+        Long id = lerLong();
+
+        Category existente = categoryService.buscarPorId(id);
+        System.out.println("Categoria atual: " + existente);
+
+        System.out.print("Novo nome (ENTER para manter): ");
+        String nome = scanner.nextLine();
+        if (!nome.isBlank()) existente.setName(nome.trim());
+
+        System.out.print("Nova descrição (ENTER para manter): ");
+        String descricao = scanner.nextLine();
+        if (!descricao.isBlank()) existente.setDescription(descricao.trim());
+
+        Category atualizada = categoryService.atualizar(existente);
+        System.out.println("Categoria atualizada: " + atualizada);
+    }
+
+    private void deletarCategoria() {
+        System.out.println("\n=== Deletar Categoria ===");
+        System.out.print("ID da categoria: ");
+        Long id = lerLong();
+
+        categoryService.deletar(id);
+        System.out.println("Categoria deletada com sucesso.");
+    }
+
+    private void listarCategorias() {
+        List<Category> categorias = categoryService.listarTodas();
+        if (categorias.isEmpty()) {
+            System.out.println("Nenhuma categoria cadastrada.");
+        } else {
+            categorias.forEach(System.out::println);
+        }
+    }
+
     private int lerInt() {
-        int valor = Integer.parseInt(scanner.nextLine());
-        return valor;
+        while (true) {
+            String entrada = scanner.nextLine();
+            if (entrada == null || entrada.isBlank()) {
+                System.out.print("Valor obrigatório. Informe um número inteiro: ");
+                continue;
+            }
+
+            try {
+                return Integer.parseInt(entrada.trim());
+            } catch (NumberFormatException e) {
+                System.out.print("Valor inválido. Informe um número inteiro: ");
+            }
+        }
     }
 
     private Long lerLong() {
-        Long valor = Long.parseLong(scanner.nextLine());
-        return valor;
+        while (true) {
+            String entrada = scanner.nextLine();
+            if (entrada == null || entrada.isBlank()) {
+                System.out.print("Valor obrigatório. Informe um número: ");
+                continue;
+            }
+
+            try {
+                return Long.parseLong(entrada.trim());
+            } catch (NumberFormatException e) {
+                System.out.print("Valor inválido. Informe um número: ");
+            }
+        }
     }
 
     private BigDecimal lerBigDecimal() {
-        String s = scanner.nextLine();
-        return new BigDecimal(s.replace(",", "."));
+        while (true) {
+            String entrada = scanner.nextLine();
+            if (entrada == null || entrada.isBlank()) {
+                System.out.print("Valor obrigatório. Informe um número decimal: ");
+                continue;
+            }
+
+            try {
+                return new BigDecimal(entrada.trim().replace(",", "."));
+            } catch (NumberFormatException e) {
+                System.out.print("Valor inválido. Informe um número decimal: ");
+            }
+        }
+    }
+
+    private Integer lerIntOpcional() {
+        while (true) {
+            String entrada = scanner.nextLine();
+            if (entrada == null || entrada.isBlank()) {
+                return null;
+            }
+
+            try {
+                return Integer.parseInt(entrada.trim());
+            } catch (NumberFormatException e) {
+                System.out.print("Valor inválido. Informe um número inteiro (ou ENTER para manter): ");
+            }
+        }
+    }
+
+    private Long lerLongOpcional() {
+        while (true) {
+            String entrada = scanner.nextLine();
+            if (entrada == null || entrada.isBlank()) {
+                return null;
+            }
+
+            try {
+                return Long.parseLong(entrada.trim());
+            } catch (NumberFormatException e) {
+                System.out.print("Valor inválido. Informe um número (ou ENTER para manter): ");
+            }
+        }
+    }
+
+    private BigDecimal lerBigDecimalOpcional() {
+        while (true) {
+            String entrada = scanner.nextLine();
+            if (entrada == null || entrada.isBlank()) {
+                return null;
+            }
+
+            try {
+                return new BigDecimal(entrada.trim().replace(",", "."));
+            } catch (NumberFormatException e) {
+                System.out.print("Valor inválido. Informe um número decimal (ou ENTER para manter): ");
+            }
+        }
+    }
+
+    private String lerTextoObrigatorio(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String entrada = scanner.nextLine();
+            if (entrada != null && !entrada.isBlank()) {
+                return entrada.trim();
+            }
+            System.out.println("Campo obrigatório. Tente novamente.");
+        }
     }
 }
 

@@ -20,12 +20,13 @@ public class JdbcProductRepository implements ProductRepository {
     }
 
     private Product insert(Product p) {
-        String sql = "INSERT INTO products (category_id, name, description, price, stock, size, color, gender)"
-                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO products (category_id, name, description, price, stock, size, color, gender, active)"
+            + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             prepare(ps, p);
+            ps.setBoolean(9, p.isActive());
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) p.setId(rs.getLong(1));
@@ -38,12 +39,14 @@ public class JdbcProductRepository implements ProductRepository {
 
     private Product update(Product p) {
         String sql = "UPDATE products SET category_id = ?, name = ?, description = ?, "
-                + "price = ?, stock = ?, size = ?, color = ?, gender = ? WHERE id = ?";
+            + "price = ?, stock = ?, size = ?, color = ?, gender = ?, active = ? WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             prepare(ps, p);
+            ps.setBoolean(9, p.isActive());
             ps.setLong(10, p.getId());
+
             ps.executeUpdate();
             return p;
         } catch (SQLException e) {
@@ -65,8 +68,8 @@ public class JdbcProductRepository implements ProductRepository {
     @Override
     public Optional<Product> findById(Long id) {
         String sql = "SELECT p.id, p.name, p.description, p.price, p.stock, p.size, p.color, p.gender, "
-                + "c.id as category_id, c.name as category_name, c.description as category_description "
-                + "FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = ?";
+                + "c.id as category_id, c.name as category_name, c.description as category_description, p.active "
+                + "FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = ? AND p.active = 1";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -83,8 +86,8 @@ public class JdbcProductRepository implements ProductRepository {
     @Override
     public List<Product> findAll() {
         String sql = "SELECT p.id, p.name, p.description, p.price, p.stock, p.size, p.color, p.gender, "
-                + "c.id as category_id, c.name as category_name, c.description as category_description "
-                + "FROM products p JOIN categories c ON p.category_id = c.id";
+                + "c.id as category_id, c.name as category_name, c.description as category_description, p.active "
+                + "FROM products p JOIN categories c ON p.category_id = c.id WHERE p.active = 1";
 
         List<Product> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
@@ -101,8 +104,8 @@ public class JdbcProductRepository implements ProductRepository {
     @Override
     public List<Product> findByCategory(Long categoryId) {
         String sql = "SELECT p.id, p.name, p.description, p.price, p.stock, p.size, p.color, p.gender, "
-                + "c.id as category_id, c.name as category_name, c.description as category_description "
-                + "FROM products p JOIN categories c ON p.category_id = c.id WHERE c.id = ?";
+                + "c.id as category_id, c.name as category_name, c.description as category_description, p.active "
+                + "FROM products p JOIN categories c ON p.category_id = c.id WHERE c.id = ? AND p.active = 1";
 
         List<Product> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
@@ -120,7 +123,7 @@ public class JdbcProductRepository implements ProductRepository {
 
     @Override
     public void deleteById(Long id) {
-        String sql = "DELETE FROM products WHERE id = ?";
+        String sql = "UPDATE products SET active = 0 WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -167,6 +170,7 @@ public class JdbcProductRepository implements ProductRepository {
         p.setSize(rs.getString("size"));
         p.setColor(rs.getString("color"));
         p.setGender(rs.getString("gender"));
+        p.setActive(rs.getBoolean("active"));
         return p;
     }
 }

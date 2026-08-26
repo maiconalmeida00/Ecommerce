@@ -12,5 +12,5 @@ public interface OrderRepository {
     List<Order> findByCustomer(Long customerId);
     List<Order> findAll();
     int countByCustomer(Long customerId);
-    void deleteById(Long id);
+    void deleteById(Long id); 
 }

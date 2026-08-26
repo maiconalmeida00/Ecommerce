@@ -4,6 +4,7 @@ import config.DatabaseConfig;
 import exception.DatabaseException;
 import model.Customer;
 import model.Order;
+import repository.OrderRepository;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -12,10 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import repository.OrderRepository;
-
 public class JdbcOrderRepository implements OrderRepository {
 
+    @Override
     public Order save(Order order) {
         if (order.getId() == null) {
             return insert(order);
@@ -49,7 +49,7 @@ public class JdbcOrderRepository implements OrderRepository {
 
     private Order update(Order order) {
         String sql = "UPDATE orders SET " +
-                "customer_id = ?, status = ?, order_date = ?, total_amount = ?, shipping_address = ? " +
+            "customer_id = ?, status = ?, order_date = ?, total_amount = ?, shipping_address = ?, active = ? " +
                 "WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -83,13 +83,15 @@ public class JdbcOrderRepository implements OrderRepository {
         ps.setString(5, order.getShippingAddress());
 
         if (includeId) {
-            ps.setLong(6, order.getId());
+            ps.setBoolean(6, order.isActive());
+            ps.setLong(7, order.getId());
         }
     }
 
+    @Override
     public Optional<Order> findById(Long id) {
-        String sql = "SELECT id, customer_id, status, order_date, total_amount, shipping_address " +
-                "FROM orders WHERE id = ?";
+        String sql = "SELECT id, customer_id, status, order_date, total_amount, shipping_address, active " +
+            "FROM orders WHERE id = ? AND active = 1";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -106,9 +108,10 @@ public class JdbcOrderRepository implements OrderRepository {
         }
     }
 
+    @Override
     public List<Order> findByCustomer(Long customerId) {
-        String sql = "SELECT id, customer_id, status, order_date, total_amount, shipping_address " +
-                "FROM orders WHERE customer_id = ?";
+        String sql = "SELECT id, customer_id, status, order_date, total_amount, shipping_address, active " +
+            "FROM orders WHERE customer_id = ? AND active = 1";
 
         List<Order> list = new ArrayList<>();
 
@@ -127,9 +130,10 @@ public class JdbcOrderRepository implements OrderRepository {
         }
     }
 
+    @Override
     public List<Order> findAll() {
-        String sql = "SELECT id, customer_id, status, order_date, total_amount, shipping_address " +
-                "FROM orders";
+        String sql = "SELECT id, customer_id, status, order_date, total_amount, shipping_address, active " +
+            "FROM orders WHERE active = 1";
 
         List<Order> list = new ArrayList<>();
 
@@ -148,7 +152,7 @@ public class JdbcOrderRepository implements OrderRepository {
 
     @Override
     public int countByCustomer(Long customerId) {
-        String sql = "SELECT COUNT(*) FROM orders WHERE customer_id = ?";
+        String sql = "SELECT COUNT(*) FROM orders WHERE customer_id = ? AND active = 1";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -165,8 +169,9 @@ public class JdbcOrderRepository implements OrderRepository {
         }
     }
 
+    @Override
     public void deleteById(Long id) {
-        String sql = "DELETE FROM orders WHERE id = ?";
+        String sql = "UPDATE orders SET active = 0 WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -174,7 +179,7 @@ public class JdbcOrderRepository implements OrderRepository {
             ps.setLong(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new DatabaseException("Erro ao deletar pedido", e);
+            throw new DatabaseException("Erro ao inativar pedido", e);
         }
     }
 
@@ -195,6 +200,7 @@ public class JdbcOrderRepository implements OrderRepository {
         order.setStatus(rs.getString("status"));
         order.setTotalAmount(rs.getBigDecimal("total_amount"));
         order.setShippingAddress(rs.getString("shipping_address"));
+        order.setActive(rs.getBoolean("active"));
 
         return order;
     }

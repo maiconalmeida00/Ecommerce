@@ -36,14 +36,9 @@ public class Main {
 
         int opcao;
         do {
-            System.out.println("\n=== Menu Principal ===");
-            System.out.println("1 - Clientes");
-            System.out.println("2 - Produtos");
-            System.out.println("3 - Pedidos");
-            System.out.println("0 - Sair");
-            System.out.print("Escolha uma opção: ");
+            exibirMenuPrincipal();
 
-            opcao = Integer.parseInt(sc.nextLine());
+            opcao = lerOpcaoMenu(sc);
 
             switch (opcao) {
                 case 1 -> customerController.menu();
@@ -55,5 +50,34 @@ public class Main {
         } while (opcao != 0);
 
         sc.close();
+    }
+
+    private static void exibirMenuPrincipal() {
+        System.out.println("\n========================================");
+        System.out.println("            MENU PRINCIPAL              ");
+        System.out.println("========================================");
+        System.out.println("  1) Clientes");
+        System.out.println("  2) Produtos e categorias");
+        System.out.println("  3) Pedidos");
+        System.out.println("----------------------------------------");
+        System.out.println("  0) Sair");
+        System.out.println("----------------------------------------");
+        System.out.print("Digite a opção: ");
+    }
+
+    private static int lerOpcaoMenu(Scanner sc) {
+        while (true) {
+            String entrada = sc.nextLine();
+            if (entrada == null || entrada.isBlank()) {
+                System.out.print("Opção obrigatória. Informe um número: ");
+                continue;
+            }
+
+            try {
+                return Integer.parseInt(entrada.trim());
+            } catch (NumberFormatException e) {
+                System.out.print("Opção inválida. Informe um número: ");
+            }
+        }
     }
 }

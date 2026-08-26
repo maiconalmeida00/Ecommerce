@@ -14,8 +14,10 @@ public class Order {
     private BigDecimal totalAmount;
     private String shippingAddress;
     private List<OrderItem> items = new ArrayList<>();
+    private boolean active; 
 
     public Order() {
+        this.active = true;
     }
 
     public Order(Long id, Customer customer, String status,
@@ -27,6 +29,7 @@ public class Order {
         this.orderDate = orderDate;
         this.totalAmount = totalAmount;
         this.shippingAddress = shippingAddress;
+        this.active = true;
     }
 
     public void addItem(OrderItem item) {
@@ -89,16 +92,30 @@ public class Order {
         this.items = items;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     @Override
     public String toString() {
+        Long customerId = customer != null ? customer.getId() : null;
+        String customerName = customer != null ? customer.getName() : null;
+        int itensCount = items != null ? items.size() : 0;
+
         return "Order{" +
                 "id=" + id +
-                ", customer=" + customer +
+                ", clienteId=" + customerId +
+                ", clienteNome='" + customerName + '\'' +
                 ", status='" + status + '\'' +
-                ", orderDate=" + orderDate +
-                ", totalAmount=" + totalAmount +
-                ", shippingAddress='" + shippingAddress + '\'' +
-                ", items=" + items +
+                ", dataPedido=" + orderDate +
+                ", total=" + totalAmount +
+                ", endereco='" + shippingAddress + '\'' +
+                ", qtdItens=" + itensCount +
+                ", ativo=" + active +
                 '}';
     }
 }

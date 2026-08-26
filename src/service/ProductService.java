@@ -22,7 +22,9 @@ public class ProductService {
     }
 
     public Product criarProduto(Product product) {
+        normalizarDados(product);
         validar(product);
+        product.setActive(true);
         return productRepository.save(product);
     }
 
@@ -30,6 +32,7 @@ public class ProductService {
         if (product.getId() == null) {
             throw new BusinessException("ID do produto é obrigatório para atualização");
         }
+        normalizarDados(product);
         validar(product);
         return productRepository.save(product);
     }
@@ -67,11 +70,23 @@ public class ProductService {
         if (p.getName() == null || p.getName().isBlank()) {
             throw new BusinessException("Nome do produto é obrigatório");
         }
-        if (p.getPrice() == null || p.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException("Preço deve ser maior que zero");
+        if (p.getPrice() == null || p.getPrice().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException("Preço não pode ser negativo");
         }
         if (p.getCategory() == null || p.getCategory().getId() == null) {
             throw new BusinessException("Categoria do produto é obrigatória");
+        }
+        if (p.getStock() < 0) {
+            throw new BusinessException("Estoque não pode ser negativo");
+        }
+        if (p.getGender() == null || !p.getGender().matches("[MFU]")) {
+            throw new BusinessException("Gênero deve ser M, F ou U");
+        }
+    }
+
+    private void normalizarDados(Product product) {
+        if (product.getGender() != null) {
+            product.setGender(product.getGender().trim().toUpperCase());
         }
     }
 }

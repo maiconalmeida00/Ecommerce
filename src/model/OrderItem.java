@@ -64,12 +64,17 @@ public class OrderItem {
 
     @Override
     public String toString() {
+        Long orderId = order != null ? order.getId() : null;
+        Long productId = product != null ? product.getId() : null;
+        String productName = product != null ? product.getName() : null;
+
         return "OrderItem{" +
-                "id=" + id +
-                ", order=" + order +
-                ", product=" + product +
-                ", quantity=" + quantity +
-                ", priceAtPurchase=" + priceAtPurchase +
-                '}';
+            "id=" + id +
+            ", pedidoId=" + orderId +
+            ", produtoId=" + productId +
+            ", produtoNome='" + productName + '\'' +
+            ", quantidade=" + quantity +
+            ", precoCompra=" + priceAtPurchase +
+            '}';
     }
 }

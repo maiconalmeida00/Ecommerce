@@ -1,5 +1,6 @@
 package controller;
 
+import exception.BusinessException;
 import model.Customer;
 import model.Order;
 import model.OrderItem;
@@ -34,27 +35,39 @@ public class OrderController {
     public void menu() {
         int opcao;
         do {
-            System.out.println("\n=== Menu Pedido ===");
-            System.out.println("1 - Listar pedidos");
-            System.out.println("2 - Listar pedidos por cliente");
-            System.out.println("3 - Criar pedido");
-            System.out.println("4 - Atualizar status do pedido");
-            System.out.println("5 - Deletar pedido");
-            System.out.println("0 - Voltar");
-            System.out.print("Escolha uma opção: ");
+            exibirMenuPedidos();
 
             opcao = lerInt();
 
-            switch (opcao) {
-                case 1 -> listarPedidos();
-                case 2 -> listarPorCliente();
-                case 3 -> criarPedido();
-                case 4 -> atualizarStatus();
-                case 5 -> deletarPedido();
-                case 0 -> System.out.println("Voltando ao menu principal...");
-                default -> System.out.println("Opção inválida!");
+            try {
+                switch (opcao) {
+                    case 1 -> listarPedidos();
+                    case 2 -> listarPorCliente();
+                    case 3 -> criarPedido();
+                    case 4 -> atualizarStatus();
+                    case 5 -> deletarPedido();
+                    case 0 -> System.out.println("Voltando ao menu principal...");
+                    default -> System.out.println("Opção inválida!");
+                }
+            } catch (BusinessException e) {
+                System.out.println("Erro: " + e.getMessage());
             }
         } while (opcao != 0);
+    }
+
+    private void exibirMenuPedidos() {
+        System.out.println("\n========================================");
+        System.out.println("               MENU PEDIDOS             ");
+        System.out.println("========================================");
+        System.out.println("  1) Listar pedidos");
+        System.out.println("  2) Listar pedidos por cliente");
+        System.out.println("  3) Criar pedido");
+        System.out.println("  4) Atualizar status do pedido");
+        System.out.println("  5) Deletar pedido");
+        System.out.println("----------------------------------------");
+        System.out.println("  0) Voltar");
+        System.out.println("----------------------------------------");
+        System.out.print("Digite a opção: ");
     }
 
     private void listarPedidos() {
@@ -85,20 +98,19 @@ public class OrderController {
 
         Customer customer = customerService.buscarPorId(clienteId);
 
-        System.out.print("Endereço de entrega: ");
-        String endereco = scanner.nextLine();
+        String endereco = lerTextoObrigatorio("Endereço de entrega: ");
 
         Order order = new Order();
         order.setCustomer(customer);
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus("PENDING");
+        order.setStatus("PENDENTE");
         order.setShippingAddress(endereco);
 
         List<OrderItem> items = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
 
         while (true) {
-            System.out.print("ID do produto (ou 0 para finalizar): ");
+            System.out.print("ID do produto (ou 0 para finalizar o pedido): ");
             Long produtoId = lerLong();
             if (produtoId == 0L) {
                 break;
@@ -108,6 +120,10 @@ public class OrderController {
 
             System.out.print("Quantidade: ");
             int quantidade = lerInt();
+            if (quantidade <= 0) {
+                System.out.println("Quantidade deve ser maior que zero. Item ignorado.");
+                continue;
+            }
 
             BigDecimal priceAtPurchase = product.getPrice();
             BigDecimal subtotal = priceAtPurchase.multiply(BigDecimal.valueOf(quantidade));
@@ -120,6 +136,11 @@ public class OrderController {
             item.setPriceAtPurchase(priceAtPurchase);
 
             items.add(item);
+        }
+
+        if (items.isEmpty()) {
+            System.out.println("Pedido cancelado: é necessário informar ao menos um item.");
+            return;
         }
 
         order.setTotalAmount(total);
@@ -137,8 +158,8 @@ public class OrderController {
         Order existente = orderService.buscarPorId(pedidoId);
         System.out.println("Pedido atual: " + existente);
 
-        System.out.print("Novo status (ex.: PENDING, PAID, CANCELLED): ");
-        String status = scanner.nextLine();
+        System.out.print("Novo status (PENDENTE, PAGO, ENVIADO, ENTREGUE, CANCELADO): ");
+        String status = lerTextoObrigatorioSemPrompt();
 
         existente.setStatus(status);
         Order atualizado = orderService.atualizar(existente);
@@ -156,13 +177,56 @@ public class OrderController {
     }
 
     private int lerInt() {
-        int valor = Integer.parseInt(scanner.nextLine());
-        return valor;
+        while (true) {
+            String entrada = scanner.nextLine();
+            if (entrada == null || entrada.isBlank()) {
+                System.out.print("Valor obrigatório. Informe um número inteiro: ");
+                continue;
+            }
+
+            try {
+                return Integer.parseInt(entrada.trim());
+            } catch (NumberFormatException e) {
+                System.out.print("Valor inválido. Informe um número inteiro: ");
+            }
+        }
     }
 
     private Long lerLong() {
-        Long valor = Long.parseLong(scanner.nextLine());
-        return valor;
+        while (true) {
+            String entrada = scanner.nextLine();
+            if (entrada == null || entrada.isBlank()) {
+                System.out.print("Valor obrigatório. Informe um número: ");
+                continue;
+            }
+
+            try {
+                return Long.parseLong(entrada.trim());
+            } catch (NumberFormatException e) {
+                System.out.print("Valor inválido. Informe um número: ");
+            }
+        }
+    }
+
+    private String lerTextoObrigatorio(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String entrada = scanner.nextLine();
+            if (entrada != null && !entrada.isBlank()) {
+                return entrada.trim();
+            }
+            System.out.println("Campo obrigatório. Tente novamente.");
+        }
+    }
+
+    private String lerTextoObrigatorioSemPrompt() {
+        while (true) {
+            String entrada = scanner.nextLine();
+            if (entrada != null && !entrada.isBlank()) {
+                return entrada.trim();
+            }
+            System.out.print("Campo obrigatório. Informe um valor: ");
+        }
     }
 }
 

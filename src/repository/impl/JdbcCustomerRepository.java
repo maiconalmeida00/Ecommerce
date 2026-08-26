@@ -22,8 +22,8 @@ public class JdbcCustomerRepository implements CustomerRepository {
     }
 
     private Customer insert(Customer customer) {
-        String sql = "INSERT INTO customers (name, email, password_hash, cpf, phone) "
-                + "VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO customers (name, email, password_hash, cpf, phone, active) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -33,6 +33,8 @@ public class JdbcCustomerRepository implements CustomerRepository {
             ps.setString(3, customer.getPasswordHash());
             ps.setString(4, customer.getCpf());
             ps.setString(5, customer.getPhone());
+            ps.setBoolean(6, customer.isActive()); 
+
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -42,12 +44,15 @@ public class JdbcCustomerRepository implements CustomerRepository {
             }
             return customer;
         } catch (SQLException e) {
-            throw new DatabaseException("Erro ao inserir cliente", e);
+            throw new DatabaseException(
+                    "Erro ao inserir cliente (SQLState=" + e.getSQLState() + ", código=" + e.getErrorCode() + ")",
+                    e
+            );
         }
     }
 
     private Customer update(Customer customer) {
-        String sql = "UPDATE customers SET name = ?, email = ?, password_hash = ?, cpf = ?, phone = ? "
+        String sql = "UPDATE customers SET name = ?, email = ?, password_hash = ?, cpf = ?, phone = ?, active = ? "
                 + "WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -58,7 +63,9 @@ public class JdbcCustomerRepository implements CustomerRepository {
             ps.setString(3, customer.getPasswordHash());
             ps.setString(4, customer.getCpf());
             ps.setString(5, customer.getPhone());
-            ps.setLong(6, customer.getId());
+            ps.setBoolean(6, customer.isActive());
+            ps.setLong(7, customer.getId());
+
             ps.executeUpdate();
 
             return customer;
@@ -69,7 +76,8 @@ public class JdbcCustomerRepository implements CustomerRepository {
 
     @Override
     public Optional<Customer> findById(Long id) {
-        String sql = "SELECT id, name, email, password_hash, cpf, phone FROM customers WHERE id = ?";
+        String sql = "SELECT id, name, email, password_hash, cpf, phone, active " +
+                     "FROM customers WHERE id = ? AND active = 1";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -89,7 +97,8 @@ public class JdbcCustomerRepository implements CustomerRepository {
 
     @Override
     public Optional<Customer> findByEmail(String email) {
-        String sql = "SELECT id, name, email, password_hash, cpf, phone FROM customers WHERE email = ?";
+        String sql = "SELECT id, name, email, password_hash, cpf, phone, active " +
+                     "FROM customers WHERE email = ? AND active = 1";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -108,7 +117,7 @@ public class JdbcCustomerRepository implements CustomerRepository {
 
     @Override
     public List<Customer> findAll() {
-        String sql = "SELECT id, name, email, password_hash, cpf, phone FROM customers";
+        String sql = "SELECT id, name, email, password_hash, cpf, phone, active FROM customers WHERE active = 1";
         List<Customer> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -126,7 +135,8 @@ public class JdbcCustomerRepository implements CustomerRepository {
 
     @Override
     public void deleteById(Long id) {
-        String sql = "DELETE FROM customers WHERE id = ?";
+        // soft delete: marca como inativo, não remove linha
+        String sql = "UPDATE customers SET active = 0 WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -134,7 +144,7 @@ public class JdbcCustomerRepository implements CustomerRepository {
             ps.setLong(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new DatabaseException("Erro ao deletar cliente", e);
+            throw new DatabaseException("Erro ao inativar cliente", e);
         }
     }
 
@@ -146,6 +156,7 @@ public class JdbcCustomerRepository implements CustomerRepository {
         c.setPasswordHash(rs.getString("password_hash"));
         c.setCpf(rs.getString("cpf"));
         c.setPhone(rs.getString("phone"));
+        c.setActive(rs.getBoolean("active"));
         return c;
     }
 }
