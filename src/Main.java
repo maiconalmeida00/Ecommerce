@@ -19,11 +19,11 @@ public class Main {
 
         Scanner sc = new Scanner(System.in);
 
-        CustomerRepository customerRepo = new JdbcCustomerRepository();
+        var customerRepo = new JdbcCustomerRepository();
         var categoryRepo = new JdbcCategoryRepository();
-        ProductRepository productRepo = new JdbcProductRepository();
-        OrderRepository orderRepo = new JdbcOrderRepository();
-        OrderItemRepository orderItemRepo = new JdbcOrderItemRepository();
+        var productRepo = new JdbcProductRepository();
+        var orderRepo = new JdbcOrderRepository();
+        var orderItemRepo = new JdbcOrderItemRepository();
 
         var customerService = new CustomerService(customerRepo, orderRepo);
         var categoryService = new CategoryService(categoryRepo, productRepo);

@@ -15,6 +15,9 @@ import java.util.Optional;
 
 public class JdbcOrderRepository implements OrderRepository {
 
+    private static final String COLUNAS =
+            "id, customer_id, status, order_date, total_amount, shipping_address, active";
+
     @Override
     public Order save(Order order) {
         if (order.getId() == null) {
@@ -26,8 +29,8 @@ public class JdbcOrderRepository implements OrderRepository {
 
     private Order insert(Order order) {
         String sql = "INSERT INTO orders " +
-                "(customer_id, status, order_date, total_amount, shipping_address) " +
-                "VALUES (?, ?, ?, ?, ?)";
+                "(customer_id, status, order_date, total_amount, shipping_address, active) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -49,7 +52,7 @@ public class JdbcOrderRepository implements OrderRepository {
 
     private Order update(Order order) {
         String sql = "UPDATE orders SET " +
-            "customer_id = ?, status = ?, order_date = ?, total_amount = ?, shipping_address = ?, active = ? " +
+                "customer_id = ?, status = ?, order_date = ?, total_amount = ?, shipping_address = ?, active = ? " +
                 "WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -66,6 +69,9 @@ public class JdbcOrderRepository implements OrderRepository {
 
     private void prepareStatement(PreparedStatement ps, Order order, boolean includeId) throws SQLException {
         Long customerId = order.getCustomer() != null ? order.getCustomer().getId() : null;
+        if (customerId == null) {
+            throw new SQLException("Pedido sem cliente associado");
+        }
         ps.setLong(1, customerId);
 
         ps.setString(2, order.getStatus());
@@ -81,17 +87,16 @@ public class JdbcOrderRepository implements OrderRepository {
         ps.setBigDecimal(4, total);
 
         ps.setString(5, order.getShippingAddress());
+        ps.setBoolean(6, order.isActive());
 
         if (includeId) {
-            ps.setBoolean(6, order.isActive());
             ps.setLong(7, order.getId());
         }
     }
 
     @Override
     public Optional<Order> findById(Long id) {
-        String sql = "SELECT id, customer_id, status, order_date, total_amount, shipping_address, active " +
-            "FROM orders WHERE id = ? AND active = 1";
+        String sql = "SELECT " + COLUNAS + " FROM orders WHERE id = ? AND active = 1";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -110,9 +115,7 @@ public class JdbcOrderRepository implements OrderRepository {
 
     @Override
     public List<Order> findByCustomer(Long customerId) {
-        String sql = "SELECT id, customer_id, status, order_date, total_amount, shipping_address, active " +
-            "FROM orders WHERE customer_id = ? AND active = 1";
-
+        String sql = "SELECT " + COLUNAS + " FROM orders WHERE customer_id = ? AND active = 1";
         List<Order> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -131,10 +134,28 @@ public class JdbcOrderRepository implements OrderRepository {
     }
 
     @Override
-    public List<Order> findAll() {
-        String sql = "SELECT id, customer_id, status, order_date, total_amount, shipping_address, active " +
-            "FROM orders WHERE active = 1";
+    public List<Order> findByCustomerIncludingInactive(Long customerId) {
+        String sql = "SELECT " + COLUNAS + " FROM orders WHERE customer_id = ?";
+        List<Order> list = new ArrayList<>();
 
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, customerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(map(rs));
+                }
+            }
+            return list;
+        } catch (SQLException e) {
+            throw new DatabaseException("Erro ao buscar pedidos do cliente (incluindo inativos)", e);
+        }
+    }
+
+    @Override
+    public List<Order> findAll() {
+        String sql = "SELECT " + COLUNAS + " FROM orders WHERE active = 1";
         List<Order> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -180,6 +201,20 @@ public class JdbcOrderRepository implements OrderRepository {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new DatabaseException("Erro ao inativar pedido", e);
+        }
+    }
+
+    @Override
+    public void reactivateById(Long id) {
+        String sql = "UPDATE orders SET active = 1 WHERE id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseException("Erro ao reativar pedido", e);
         }
     }
 

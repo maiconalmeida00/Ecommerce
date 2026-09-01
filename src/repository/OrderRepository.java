@@ -10,7 +10,9 @@ public interface OrderRepository {
     Order save(Order order);
     Optional<Order> findById(Long id);
     List<Order> findByCustomer(Long customerId);
+    List<Order> findByCustomerIncludingInactive(Long customerId);
     List<Order> findAll();
     int countByCustomer(Long customerId);
-    void deleteById(Long id); 
+    void deleteById(Long id);
+    void reactivateById(Long id);
 }

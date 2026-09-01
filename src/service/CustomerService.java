@@ -42,9 +42,23 @@ public class CustomerService {
         customerRepository.deleteById(cliente.getId());
 
         List<Order> pedidosDoCliente = orderRepository.findByCustomer(id);
-        for (Order pedido : pedidosDoCliente) {
-            orderRepository.deleteById(pedido.getId());
+        pedidosDoCliente.forEach(pedido -> orderRepository.deleteById(pedido.getId()));
+    }
+
+    public void reativar(Long id) {
+        Customer cliente = customerRepository.findByIdIncludingInactive(id)
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado: " + id));
+
+        if (cliente.isActive()) {
+            throw new BusinessException("Cliente já está ativo");
         }
+
+        customerRepository.reactivateById(cliente.getId());
+
+        List<Order> pedidosDoCliente = orderRepository.findByCustomerIncludingInactive(id);
+        pedidosDoCliente.stream()
+                .filter(pedido -> !pedido.isActive())
+                .forEach(pedido -> orderRepository.reactivateById(pedido.getId()));
     }
 
     public Customer buscarPorId(Long id) {
@@ -54,6 +68,10 @@ public class CustomerService {
 
     public List<Customer> listarTodos() {
         return customerRepository.findAll();
+    }
+
+    public List<Customer> listarInativos() {
+        return customerRepository.findAllInactive();
     }
 
     public List<Customer> buscarPorNomeContendo(String trecho) {
@@ -75,12 +93,6 @@ public class CustomerService {
         }
         if (c.getPhone() == null || c.getPhone().isBlank()) {
             throw new BusinessException("Telefone do cliente é obrigatório");
-        }
-        if (!c.getCpf().matches("\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}")) {
-            throw new BusinessException("CPF deve estar no formato 123.456.789-10");
-        }
-        if (!c.getPhone().matches("\\(\\d{2}\\) \\d{5}-\\d{4}")) {
-            throw new BusinessException("Telefone deve estar no formato (11) 91111-1111");
         }
     }
 

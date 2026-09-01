@@ -12,6 +12,9 @@ import java.util.Optional;
 
 public class JdbcCustomerRepository implements CustomerRepository {
 
+    private static final String COLUNAS =
+            "id, name, email, password_hash, cpf, phone, active";
+
     @Override
     public Customer save(Customer customer) {
         if (customer.getId() == null) {
@@ -33,8 +36,7 @@ public class JdbcCustomerRepository implements CustomerRepository {
             ps.setString(3, customer.getPasswordHash());
             ps.setString(4, customer.getCpf());
             ps.setString(5, customer.getPhone());
-            ps.setBoolean(6, customer.isActive()); 
-
+            ps.setBoolean(6, customer.isActive());
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -65,7 +67,6 @@ public class JdbcCustomerRepository implements CustomerRepository {
             ps.setString(5, customer.getPhone());
             ps.setBoolean(6, customer.isActive());
             ps.setLong(7, customer.getId());
-
             ps.executeUpdate();
 
             return customer;
@@ -76,8 +77,7 @@ public class JdbcCustomerRepository implements CustomerRepository {
 
     @Override
     public Optional<Customer> findById(Long id) {
-        String sql = "SELECT id, name, email, password_hash, cpf, phone, active " +
-                     "FROM customers WHERE id = ? AND active = 1";
+        String sql = "SELECT " + COLUNAS + " FROM customers WHERE id = ? AND active = 1";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -85,8 +85,7 @@ public class JdbcCustomerRepository implements CustomerRepository {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    Customer c = map(rs);
-                    return Optional.of(c);
+                    return Optional.of(map(rs));
                 }
             }
             return Optional.empty();
@@ -96,9 +95,27 @@ public class JdbcCustomerRepository implements CustomerRepository {
     }
 
     @Override
+    public Optional<Customer> findByIdIncludingInactive(Long id) {
+        String sql = "SELECT " + COLUNAS + " FROM customers WHERE id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(map(rs));
+                }
+            }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new DatabaseException("Erro ao buscar cliente (incluindo inativos)", e);
+        }
+    }
+
+    @Override
     public Optional<Customer> findByEmail(String email) {
-        String sql = "SELECT id, name, email, password_hash, cpf, phone, active " +
-                     "FROM customers WHERE email = ? AND active = 1";
+        String sql = "SELECT " + COLUNAS + " FROM customers WHERE email = ? AND active = 1";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -117,7 +134,7 @@ public class JdbcCustomerRepository implements CustomerRepository {
 
     @Override
     public List<Customer> findAll() {
-        String sql = "SELECT id, name, email, password_hash, cpf, phone, active FROM customers WHERE active = 1";
+        String sql = "SELECT " + COLUNAS + " FROM customers WHERE active = 1";
         List<Customer> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -134,8 +151,25 @@ public class JdbcCustomerRepository implements CustomerRepository {
     }
 
     @Override
+    public List<Customer> findAllInactive() {
+        String sql = "SELECT " + COLUNAS + " FROM customers WHERE active = 0";
+        List<Customer> list = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(map(rs));
+            }
+        } catch (SQLException e) {
+            throw new DatabaseException("Erro ao listar clientes inativos", e);
+        }
+        return list;
+    }
+
+    @Override
     public void deleteById(Long id) {
-        // soft delete: marca como inativo, não remove linha
         String sql = "UPDATE customers SET active = 0 WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -145,6 +179,20 @@ public class JdbcCustomerRepository implements CustomerRepository {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new DatabaseException("Erro ao inativar cliente", e);
+        }
+    }
+
+    @Override
+    public void reactivateById(Long id) {
+        String sql = "UPDATE customers SET active = 1 WHERE id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new DatabaseException("Erro ao reativar cliente", e);
         }
     }
 

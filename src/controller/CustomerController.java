@@ -34,6 +34,8 @@ public class CustomerController {
                     case 3 -> criarCliente();
                     case 4 -> atualizarCliente();
                     case 5 -> deletarCliente();
+                    case 6 -> listarClientesInativos();
+                    case 7 -> reativarCliente();
                     case 0 -> System.out.println("Voltando ao menu principal...");
                     default -> System.out.println("Opção inválida!");
                 }
@@ -51,7 +53,9 @@ public class CustomerController {
         System.out.println("  2) Buscar clientes por nome");
         System.out.println("  3) Criar cliente");
         System.out.println("  4) Atualizar cliente");
-        System.out.println("  5) Deletar cliente");
+        System.out.println("  5) Inativar cliente");
+        System.out.println("  6) Listar clientes inativos");
+        System.out.println("  7) Reativar cliente");
         System.out.println("----------------------------------------");
         System.out.println("  0) Voltar");
         System.out.println("----------------------------------------");
@@ -140,6 +144,24 @@ public class CustomerController {
 
         customerService.deletar(id);
         System.out.println("Cliente deletado com sucesso.");
+    }
+
+    private void listarClientesInativos() {
+        List<Customer> inativos = customerService.listarInativos();
+        if (inativos.isEmpty()) {
+            System.out.println("Nenhum cliente inativo.");
+        } else {
+            inativos.forEach(System.out::println);
+        }
+    }
+
+    private void reativarCliente() {
+        System.out.println("\n=== Reativar Cliente ===");
+        System.out.print("ID do cliente: ");
+        Long id = lerLong();
+
+        customerService.reativar(id);
+        System.out.println("Cliente reativado com sucesso.");
     }
 
     private int lerInt() {
