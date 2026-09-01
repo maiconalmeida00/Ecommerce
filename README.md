@@ -11,11 +11,10 @@ Aplicação Java em console para gerenciamento de clientes, categorias, produtos
 
 ## Funcionalidades
 
-- Cadastro, consulta, atualização e inativação de clientes
+- Cadastro, consulta, busca, atualização, inativação e reativação de clientes
 - Cadastro, listagem, atualização e exclusão de categorias
-- Cadastro, consulta, atualização e inativação de produtos
-- Criação e consulta de pedidos
-- Atualização de status e inativação de pedidos
+- Cadastro, consulta, atualização, inativação e reativação de produtos
+- Criação, listagem por cliente, atualização de status e exclusão de pedidos
 - Cadastro de itens de pedido
 - Cálculo do total do pedido
 - Baixa de estoque ao criar um pedido
@@ -37,7 +36,9 @@ Aplicação Java em console para gerenciamento de clientes, categorias, produtos
 - `2` - Buscar clientes por nome
 - `3` - Criar cliente
 - `4` - Atualizar cliente
-- `5` - Deletar cliente
+- `5` - Inativar cliente
+- `6` - Listar clientes inativos
+- `7` - Reativar cliente
 - `0` - Voltar
 
 ### Produtos e categorias
@@ -76,6 +77,7 @@ Categorias:
 - CPF deve possuir 11 dígitos e é salvo no formato `123.456.789-10`.
 - Telefone deve possuir 11 dígitos e é salvo no formato `(11) 91111-1111`.
 - E-mail e CPF duplicados são rejeitados antes da gravação.
+- Clientes podem ser inativados e reativados conforme necessário.
 
 ### Produtos
 
@@ -93,6 +95,7 @@ Categorias:
 - O mesmo produto não pode aparecer mais de uma vez no pedido.
 - Os status aceitos são `PENDENTE`, `PAGO`, `ENVIADO`, `ENTREGUE` e `CANCELADO`.
 - A entrada do status é normalizada para maiúsculo antes de ser salva.
+- O estoque dos produtos é decrementado automaticamente ao criar um pedido.
 
 ## Banco de dados
 
